@@ -49,15 +49,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'college_chatbot.wsgi.application'
 
-# Database - Using custom connection
+# Database - SQLite for local development
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'chat_bot',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

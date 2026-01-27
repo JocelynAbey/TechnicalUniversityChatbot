@@ -64,8 +64,7 @@ python manage.py runserver
 ```
 
 Notes:
-- This app uses a MySQL database (see `web/chatbot_with_admin/college_chatbot/college_chatbot/settings.py`).
-- Ensure MySQL is running and the `chat_bot` database exists.
+- The admin app is configured to use SQLite by default (see `web/chatbot_with_admin/college_chatbot/college_chatbot/settings.py`).
 
 ## Data Files
 Shared assets live in `data/`:
