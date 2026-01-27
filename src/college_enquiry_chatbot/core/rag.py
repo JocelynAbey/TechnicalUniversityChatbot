@@ -101,6 +101,14 @@ class CollegeEnquiryRAGChatbot:
         return retrieved
 
     def generate_answer(self, user_question: str, threshold: float = 0.6) -> dict:
+        if self._is_greeting(user_question):
+            return {
+                "answer": "Hello! How can I help you with college enquiries today?",
+                "confidence": 1.0,
+                "category": "greeting",
+                "matched_question": None,
+                "related_questions": [],
+            }
         context_items = self.retrieve_context(user_question, top_k=3)
         if not context_items:
             return {
@@ -138,10 +146,16 @@ Answer:
 
         llm_response = self.llm(prompt, max_length=150, num_return_sequences=1)[0][
             "generated_text"
-        ]
+        ].strip()
+
+        answer_text = self._strip_prompt(prompt, llm_response)
+        if sim >= 0.9:
+            answer_text = best_item.answer
+        elif not self._uses_context(answer_text, best_item.answer):
+            answer_text = best_item.answer
 
         return {
-            "answer": llm_response.strip(),
+            "answer": answer_text,
             "confidence": round(sim, 2),
             "category": best_item.category,
             "matched_question": best_item.question,
@@ -152,6 +166,42 @@ Answer:
 
     def chat(self, user_question: str) -> dict:
         return self.generate_answer(user_question)
+
+    @staticmethod
+    def _is_greeting(text: str) -> bool:
+        normalized = text.strip().lower()
+        greetings = {
+            "hi",
+            "hello",
+            "hey",
+            "good morning",
+            "good afternoon",
+            "good evening",
+            "namaste",
+            "hola",
+        }
+        return normalized in greetings
+
+    @staticmethod
+    def _uses_context(answer: str, context_answer: str) -> bool:
+        answer_lower = answer.lower()
+        context_lower = context_answer.lower()
+        if not answer_lower:
+            return False
+        shared_tokens = {
+            token
+            for token in context_lower.split()
+            if token.isalpha() and token in answer_lower
+        }
+        return len(shared_tokens) >= 2
+
+    @staticmethod
+    def _strip_prompt(prompt: str, generated: str) -> str:
+        if "Answer:" in generated:
+            return generated.split("Answer:")[-1].strip()
+        if generated.startswith(prompt):
+            return generated[len(prompt):].strip()
+        return generated
 
     @staticmethod
     def _build_llm_pipeline(model_name: str):
