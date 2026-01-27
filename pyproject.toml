@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "college-enquiry-chatbot"
+version = "0.1.0"
+description = "College enquiry chatbot with RAG + LLM, CLI, and Django web app"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "sentence-transformers",
+  "transformers",
+  "scikit-learn",
+  "numpy",
+  "django",
+]
+
+[project.scripts]
+college-chatbot = "college_enquiry_chatbot.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
