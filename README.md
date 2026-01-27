@@ -15,6 +15,21 @@ python -m venv .venv
 pip install -e .
 ```
 
+## Step-by-step: Run the CLI
+1. Ensure data files exist in `data/` (already provided).
+2. Train the model:
+   ```bash
+   college-chatbot train
+   ```
+3. Start a chat session:
+   ```bash
+   college-chatbot chat
+   ```
+   Or ask a single question:
+   ```bash
+   college-chatbot chat "What courses are offered?"
+   ```
+
 ## CLI Usage
 Train the model:
 ```bash
@@ -31,14 +46,26 @@ Ask a single question:
 college-chatbot chat "What courses are offered?"
 ```
 
-## Django Web App
+## Step-by-step: Run the Django App
+1. Activate your virtual environment and install deps.
+2. From the project root, run:
+   ```bash
+   cd web/collegeenquiry_chatbot
+   python manage.py migrate
+   python manage.py runserver
+   ```
+3. Open: http://127.0.0.1:8000/
+
+## Admin Django App (with dataset upload/training)
 ```bash
-cd web/collegeenquiry_chatbot
+cd web/chatbot_with_admin/college_chatbot
 python manage.py migrate
 python manage.py runserver
 ```
 
-Open: http://127.0.0.1:8000/
+Notes:
+- This app uses a MySQL database (see `web/chatbot_with_admin/college_chatbot/college_chatbot/settings.py`).
+- Ensure MySQL is running and the `chat_bot` database exists.
 
 ## Data Files
 Shared assets live in `data/`:

@@ -74,7 +74,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Chatbot model paths
-CHATBOT_EMBEDDINGS_PATH = os.path.join(BASE_DIR, 'chatbot_embeddings.npy')
-CHATBOT_DATA_PATH = os.path.join(BASE_DIR, 'chatbot_data.json')
-CHATBOT_DATASET_PATH = os.path.join(BASE_DIR, 'chatbot_dataset.json')
+# Chatbot model paths (shared core config)
+from college_enquiry_chatbot.config import data_path, dataset_path, model_path
+
+CHATBOT_EMBEDDINGS_PATH = str(model_path())
+CHATBOT_DATA_PATH = str(data_path())
+CHATBOT_DATASET_PATH = str(dataset_path())

@@ -33,7 +33,7 @@ class CollegeEnquiryRAGChatbot:
         self.model_trained = False
 
         self.embedder = SentenceTransformer(embedder_name)
-        self.llm = pipeline("text2text-generation", model=llm_name)
+        self.llm = self._build_llm_pipeline(llm_name)
 
         self.index = None
         self.embeddings = None
@@ -152,3 +152,10 @@ Answer:
 
     def chat(self, user_question: str) -> dict:
         return self.generate_answer(user_question)
+
+    @staticmethod
+    def _build_llm_pipeline(model_name: str):
+        try:
+            return pipeline("text2text-generation", model=model_name)
+        except KeyError:
+            return pipeline("text-generation", model=model_name)

@@ -8,40 +8,24 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.contrib import messages
-import sys
 
-# Add parent directory to path to import predict and train modules
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-
-# Import custom database connection
 from chatbot_app import dbconnection
 
-# Import chatbot prediction module
-try:
-    from predict import LBSITWRAGChatbot
-    from train import train_chatbot
-except ImportError:
-    # If imports fail, define fallback
-    print("Warning: Could not import predict/train modules. Make sure they are in the project root.")
-    LBSITWRAGChatbot = None
-    train_chatbot = None
+from college_enquiry_chatbot.config import data_path, dataset_path, model_path
+from college_enquiry_chatbot.core.rag import CollegeEnquiryRAGChatbot
+from college_enquiry_chatbot.cli import train_command
 
-# Initialize chatbot instance
 chatbot = None
 
 def get_chatbot():
     """Get or initialize chatbot instance"""
     global chatbot
     if chatbot is None:
-        if LBSITWRAGChatbot is None:
-            return None
-        chatbot = LBSITWRAGChatbot()
-        chatbot.load_model(
-            settings.CHATBOT_EMBEDDINGS_PATH,
-            settings.CHATBOT_DATA_PATH
+        chatbot = CollegeEnquiryRAGChatbot(
+            data_path=data_path(),
+            model_path=model_path(),
         )
+        chatbot.load_model()
     return chatbot
 
 
@@ -127,14 +111,16 @@ def admin_dashboard(request):
         return redirect('admin_login')
     
     # Get dataset info
-    dataset_exists = os.path.exists(settings.CHATBOT_DATASET_PATH)
-    model_trained = (os.path.exists(settings.CHATBOT_EMBEDDINGS_PATH) and 
-                    os.path.exists(settings.CHATBOT_DATA_PATH))
+    dataset_exists = os.path.exists(dataset_path())
+    model_trained = (
+        os.path.exists(model_path())
+        and os.path.exists(data_path())
+    )
     
     dataset_count = 0
     if dataset_exists:
         try:
-            with open(settings.CHATBOT_DATASET_PATH, 'r', encoding='utf-8') as f:
+            with open(dataset_path(), 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 dataset_count = len(data)
         except:
@@ -182,7 +168,7 @@ def upload_dataset(request):
                     return redirect('admin_dashboard')
             
             # Save dataset
-            with open(settings.CHATBOT_DATASET_PATH, 'w', encoding='utf-8') as f:
+            with open(dataset_path(), 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
             # Log upload in database
@@ -211,17 +197,12 @@ def train_model(request):
     if request.method == 'POST':
         try:
             # Check if dataset exists
-            if not os.path.exists(settings.CHATBOT_DATASET_PATH):
+            if not os.path.exists(dataset_path()):
                 messages.error(request, 'Please upload a dataset first')
                 return redirect('admin_dashboard')
             
-            # Check if train_chatbot is available
-            if train_chatbot is None:
-                messages.error(request, 'Training module not available. Check train.py location.')
-                return redirect('admin_dashboard')
-            
             # Train the model
-            success = train_chatbot()
+            success = train_command() == 0
             
             if success:
                 # Reload chatbot with new model
