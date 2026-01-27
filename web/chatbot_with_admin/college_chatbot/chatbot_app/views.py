@@ -3,6 +3,7 @@ Views for chatbot application
 """
 import json
 import os
+from datetime import datetime
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -173,7 +174,11 @@ def upload_dataset(request):
             
             # Log upload in database
             admin_id = request.session.get('admin_id')
-            qry = f"INSERT INTO dataset_uploads (admin_id, filename, record_count, upload_date) VALUES ({admin_id}, '{dataset_file.name}', {len(data)}, NOW())"
+            upload_date = datetime.now().isoformat(sep=" ", timespec="seconds")
+            qry = (
+                "INSERT INTO dataset_uploads (admin_id, filename, record_count, upload_date) "
+                f"VALUES ({admin_id}, '{dataset_file.name}', {len(data)}, '{upload_date}')"
+            )
             dbconnection.insertdata(qry)
             
             messages.success(request, f'Dataset uploaded successfully! {len(data)} records loaded.')
@@ -212,7 +217,11 @@ def train_model(request):
                 
                 # Log training in database
                 admin_id = request.session.get('admin_id')
-                qry = f"INSERT INTO model_training (admin_id, training_date, status) VALUES ({admin_id}, NOW(), 'success')"
+                training_date = datetime.now().isoformat(sep=" ", timespec="seconds")
+                qry = (
+                    "INSERT INTO model_training (admin_id, training_date, status) "
+                    f"VALUES ({admin_id}, '{training_date}', 1)"
+                )
                 dbconnection.insertdata(qry)
                 
                 messages.success(request, 'Model trained successfully!')

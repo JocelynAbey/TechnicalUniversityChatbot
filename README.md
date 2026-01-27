@@ -65,6 +65,8 @@ python manage.py runserver
 
 Notes:
 - The admin app is configured to use SQLite by default (see `web/chatbot_with_admin/college_chatbot/college_chatbot/settings.py`).
+- The first run auto-creates tables using `chatbot_app/sqlite_init.sql`.
+- Default admin credentials: **admin / admin**
 
 ## Data Files
 Shared assets live in `data/`:
