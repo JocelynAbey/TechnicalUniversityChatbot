@@ -369,7 +369,7 @@
 
             <div class="action-card">
                 <h3>📤 Upload Dataset</h3>
-                <p>Upload a new JSON dataset file containing questions and answers about colleges. The file should contain an array of objects with "question", "answer", and "category" fields.</p>
+                <p>Upload a JSON dataset file or a PDF. PDF files will be converted into Q&A JSON automatically. JSON files should contain an array of objects with "question", "answer", and "category" fields.</p>
                 
                 <div class="info-box">
                     <p><strong>JSON Format Example:</strong></p>
@@ -387,9 +387,9 @@
                 <form method="POST" action="{% url 'upload_dataset' %}" enctype="multipart/form-data" id="uploadForm">
                     {% csrf_token %}
                     <div class="file-input-wrapper">
-                        <input type="file" id="datasetFile" name="dataset_file" class="file-input" accept=".json" required>
+                        <input type="file" id="datasetFile" name="dataset_file" class="file-input" accept=".json,.pdf" required>
                         <label for="datasetFile" class="file-input-label">
-                            📁 Choose JSON File
+                            📁 Choose JSON or PDF File
                         </label>
                         <span class="file-name" id="fileName"></span>
                     </div>

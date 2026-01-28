@@ -15,6 +15,7 @@ from chatbot_app import dbconnection
 from college_enquiry_chatbot.config import data_path, dataset_path, model_path
 from college_enquiry_chatbot.core.rag import CollegeEnquiryRAGChatbot
 from college_enquiry_chatbot.cli import train_command
+from college_enquiry_chatbot.tools.pdf_converter import PDFToDatasetConverter
 
 chatbot = None
 
@@ -161,14 +162,33 @@ def upload_dataset(request):
         
         dataset_file = request.FILES['dataset_file']
         
-        if not dataset_file.name.endswith('.json'):
-            messages.error(request, 'Please upload a valid JSON file')
+        is_json = dataset_file.name.lower().endswith('.json')
+        is_pdf = dataset_file.name.lower().endswith('.pdf')
+        if not (is_json or is_pdf):
+            messages.error(request, 'Please upload a valid JSON or PDF file')
             return redirect('admin_dashboard')
         
         try:
-            # Read and validate JSON
-            file_content = dataset_file.read().decode('utf-8')
-            data = json.loads(file_content)
+            if is_pdf:
+                converter = PDFToDatasetConverter()
+                temp_path = model_path().with_suffix('.upload.pdf')
+                try:
+                    with open(temp_path, 'wb') as temp_file:
+                        for chunk in dataset_file.chunks():
+                            temp_file.write(chunk)
+                    data = converter.convert_pdf_to_dataset(
+                        pdf_path=str(temp_path),
+                        output_path=None,
+                        output_format='json',
+                        extraction_method='auto',
+                        enhance=True,
+                    )
+                finally:
+                    temp_path.unlink(missing_ok=True)
+            else:
+                # Read and validate JSON
+                file_content = dataset_file.read().decode('utf-8')
+                data = json.loads(file_content)
             
             # Validate structure
             if not isinstance(data, list):
