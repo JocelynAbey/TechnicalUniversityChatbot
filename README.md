@@ -15,33 +15,17 @@ python -m venv .venv
 pip install -e .
 ```
 
-## Step-by-step: Run the CLI
+## CLI Usage
 1. Ensure data files exist in `data/` (already provided).
 2. Train the model:
-   ```bash
-   college-chatbot train
-   ```
-3. Start a chat session:
-   ```bash
-   college-chatbot chat
-   ```
-   Or ask a single question:
-   ```bash
-   college-chatbot chat "What courses are offered?"
-   ```
-
-## CLI Usage
-Train the model:
 ```bash
 college-chatbot train
 ```
-
-Chat interactively:
+3. Chat interactively:
 ```bash
 college-chatbot chat
 ```
-
-Ask a single question:
+4. Or ask a single question:
 ```bash
 college-chatbot chat "What courses are offered?"
 ```
