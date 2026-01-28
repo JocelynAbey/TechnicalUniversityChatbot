@@ -1,5 +1,8 @@
 import argparse
+from pathlib import Path
+import subprocess
 from typing import Optional
+import os
 
 from .config import data_path, dataset_path, model_path
 from .core.rag import CollegeEnquiryRAGChatbot
@@ -64,6 +67,21 @@ def chat_command(question: Optional[str]) -> int:
     return 0
 
 
+def django_command(project_path: Path, args: list[str]) -> int:
+    manage_py = project_path / "manage.py"
+    if not manage_py.exists():
+        print(f"⚠️ manage.py not found at {manage_py}")
+        return 1
+    env = os.environ.copy()
+    src_path = str(Path(__file__).resolve().parents[2] / "src")
+    env["PYTHONPATH"] = src_path + os.pathsep + env.get("PYTHONPATH", "")
+    return subprocess.call(
+        ["python", str(manage_py), *args],
+        cwd=str(project_path),
+        env=env,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="College Enquiry Chatbot CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -72,6 +90,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     chat_parser = subparsers.add_parser("chat", help="Chat with the bot")
     chat_parser.add_argument("question", nargs="?", help="Ask a single question")
+
+    ui_parser = subparsers.add_parser("ui", help="Manage the main Django UI")
+    ui_parser.add_argument("action", choices=["migrate", "serve"], help="UI action")
+
+    admin_parser = subparsers.add_parser("adminui", help="Manage the admin Django UI")
+    admin_parser.add_argument("action", choices=["migrate", "serve"], help="Admin UI action")
 
     return parser
 
@@ -84,6 +108,16 @@ def main() -> int:
         return train_command()
     if args.command == "chat":
         return chat_command(args.question)
+    if args.command == "ui":
+        project_path = Path(__file__).resolve().parents[2] / "web" / "collegeenquiry_chatbot"
+        if args.action == "migrate":
+            return django_command(project_path, ["migrate"])
+        return django_command(project_path, ["runserver"])
+    if args.command == "adminui":
+        project_path = Path(__file__).resolve().parents[2] / "web" / "chatbot_with_admin" / "college_chatbot"
+        if args.action == "migrate":
+            return django_command(project_path, ["migrate"])
+        return django_command(project_path, ["runserver"])
 
     parser.print_help()
     return 1

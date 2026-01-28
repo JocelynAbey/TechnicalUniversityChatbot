@@ -56,6 +56,12 @@ college-chatbot chat "What courses are offered?"
    ```
 3. Open: http://127.0.0.1:8000/
 
+Or use the CLI shortcuts:
+```bash
+college-chatbot ui migrate
+college-chatbot ui serve
+```
+
 ## Admin Django App (with dataset upload/training)
 ```bash
 cd web/chatbot_with_admin/college_chatbot
@@ -67,6 +73,12 @@ Notes:
 - The admin app is configured to use SQLite by default (see `web/chatbot_with_admin/college_chatbot/college_chatbot/settings.py`).
 - The first run auto-creates tables using `chatbot_app/sqlite_init.sql`.
 - Default admin credentials: **admin / admin**
+
+Or use the CLI shortcuts:
+```bash
+college-chatbot adminui migrate
+college-chatbot adminui serve
+```
 
 ## Data Files
 Shared assets live in `data/`:
