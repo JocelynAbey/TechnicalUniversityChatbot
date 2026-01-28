@@ -5,10 +5,11 @@ from typing import Optional
 import os
 
 from .config import data_path, dataset_path, model_path
-from .core.rag import CollegeEnquiryRAGChatbot
 
 
 def train_command() -> int:
+    from .core.rag import CollegeEnquiryRAGChatbot
+
     chatbot = CollegeEnquiryRAGChatbot(
         data_path=dataset_path(),
         model_path=model_path(),
@@ -27,6 +28,8 @@ def train_command() -> int:
 
 
 def chat_command(question: Optional[str]) -> int:
+    from .core.rag import CollegeEnquiryRAGChatbot
+
     chatbot = CollegeEnquiryRAGChatbot(
         data_path=data_path(),
         model_path=model_path(),
