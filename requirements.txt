@@ -3,3 +3,7 @@ transformers
 scikit-learn
 numpy
 django
+pandas
+PyPDF2
+pdfplumber
+PyMuPDF

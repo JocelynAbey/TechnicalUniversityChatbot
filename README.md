@@ -29,6 +29,15 @@ college-chatbot chat
 ```bash
 college-chatbot chat "What courses are offered?"
 ```
+5. Convert a PDF into a dataset file:
+```bash
+college-chatbot convert data/dataset.pdf
+```
+Optional arguments:
+```bash
+college-chatbot convert data/dataset.pdf -o data/chatbot_dataset.json -f json -m auto
+college-chatbot convert data/dataset.pdf -o data/chatbot_dataset.csv -f csv --no-enhance
+```
 
 ## Step-by-step: Run the Django App
 1. Activate your virtual environment and install deps.

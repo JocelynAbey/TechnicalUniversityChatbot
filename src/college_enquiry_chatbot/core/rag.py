@@ -34,7 +34,8 @@ class CollegeEnquiryRAGChatbot:
         self.model_trained = False
 
         self.embedder = SentenceTransformer(embedder_name)
-        self.llm = self._build_llm_pipeline(llm_name)
+        self.llm_name = llm_name
+        self.llm = None
 
         self.index = None
         self.embeddings = None
@@ -164,14 +165,16 @@ Question: {user_question}
 Answer:
 """
 
-        llm_response = self.llm(prompt, max_length=150, num_return_sequences=1)[0][
-            "generated_text"
-        ].strip()
-
-        answer_text = self._strip_prompt(prompt, llm_response)
-        if sim >= 0.9:
-            answer_text = best_item.answer
-        elif not self._uses_context(answer_text, best_item.answer):
+        try:
+            llm_response = self._get_llm()(prompt, max_length=150, num_return_sequences=1)[0][
+                "generated_text"
+            ].strip()
+            answer_text = self._strip_prompt(prompt, llm_response)
+            if sim >= 0.9:
+                answer_text = best_item.answer
+            elif not self._uses_context(answer_text, best_item.answer):
+                answer_text = best_item.answer
+        except Exception:
             answer_text = best_item.answer
 
         return {
@@ -271,3 +274,9 @@ Answer:
             return pipeline("text2text-generation", model=model_name)
         except KeyError:
             return pipeline("text-generation", model=model_name)
+
+    def _get_llm(self):
+        if self.llm is not None:
+            return self.llm
+        self.llm = self._build_llm_pipeline(self.llm_name)
+        return self.llm

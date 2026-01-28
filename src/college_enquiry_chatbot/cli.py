@@ -4,26 +4,44 @@ import subprocess
 from typing import Optional
 import os
 
-from .config import data_path, dataset_path, model_path
+from .config import data_dir, data_path, dataset_path, model_path
 
 
-def train_command() -> int:
+def train_command(verbose: bool = True) -> int:
     from .core.rag import CollegeEnquiryRAGChatbot
 
-    chatbot = CollegeEnquiryRAGChatbot(
-        data_path=dataset_path(),
-        model_path=model_path(),
-    )
-    if not chatbot.load_data():
-        print("⚠️ Could not load dataset")
+    try:
+        if verbose:
+            print("🔄 Initializing chatbot...")
+        chatbot = CollegeEnquiryRAGChatbot(
+            data_path=dataset_path(),
+            model_path=model_path(),
+        )
+        if verbose:
+            print("📥 Loading dataset...")
+        if not chatbot.load_data():
+            if verbose:
+                print("⚠️ Could not load dataset")
+            return 1
+        if verbose:
+            print("🧠 Training embeddings...")
+        if not chatbot.train_model():
+            if verbose:
+                print("⚠️ Training failed")
+            return 1
+        if verbose:
+            print("💾 Saving model outputs...")
+        if not chatbot.save_model(data_output_path=data_path()):
+            if verbose:
+                print("⚠️ Saving failed")
+            return 1
+    except Exception as exc:
+        if verbose:
+            print(f"⚠️ Training failed with error: {exc}")
         return 1
-    if not chatbot.train_model():
-        print("⚠️ Training failed")
-        return 1
-    if not chatbot.save_model(data_output_path=data_path()):
-        print("⚠️ Saving failed")
-        return 1
-    print("✅ Chatbot training completed and saved!")
+
+    if verbose:
+        print("✅ Chatbot training completed and saved!")
     return 0
 
 
@@ -85,6 +103,38 @@ def django_command(project_path: Path, args: list[str]) -> int:
     )
 
 
+def convert_command(
+    pdf_path: Path,
+    output: Optional[Path],
+    output_format: str,
+    method: str,
+    enhance: bool,
+) -> int:
+    from .tools.pdf_converter import PDFToDatasetConverter
+
+    converter = PDFToDatasetConverter()
+    output_path = output
+    if output_path is None:
+        filename = "chatbot_dataset.json" if output_format == "json" else "chatbot_dataset.csv"
+        output_path = data_dir() / filename
+    try:
+        dataset = converter.convert_pdf_to_dataset(
+            pdf_path=str(pdf_path),
+            output_path=str(output_path),
+            output_format=output_format,
+            extraction_method=method,
+            enhance=enhance,
+        )
+    except Exception as exc:
+        print(f"⚠️ Conversion failed: {exc}")
+        return 1
+
+    print("✅ PDF conversion completed!")
+    print(f"Output file: {output_path}")
+    print(f"Total Q&A pairs: {len(dataset)}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="College Enquiry Chatbot CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -100,6 +150,29 @@ def build_parser() -> argparse.ArgumentParser:
     admin_parser = subparsers.add_parser("adminui", help="Manage the admin Django UI")
     admin_parser.add_argument("action", choices=["migrate", "serve"], help="Admin UI action")
 
+    convert_parser = subparsers.add_parser("convert", help="Convert a PDF to dataset JSON/CSV")
+    convert_parser.add_argument("pdf_path", type=Path, help="Path to input PDF file")
+    convert_parser.add_argument("-o", "--output", type=Path, help="Output file path")
+    convert_parser.add_argument(
+        "-f",
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="Output format (default: json)",
+    )
+    convert_parser.add_argument(
+        "-m",
+        "--method",
+        choices=["auto", "pymupdf", "pdfplumber", "pypdf2"],
+        default="auto",
+        help="PDF extraction method (default: auto)",
+    )
+    convert_parser.add_argument(
+        "--no-enhance",
+        action="store_true",
+        help="Skip dataset enhancement",
+    )
+
     return parser
 
 
@@ -108,7 +181,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "train":
-        return train_command()
+        return train_command(verbose=True)
     if args.command == "chat":
         return chat_command(args.question)
     if args.command == "ui":
@@ -121,6 +194,14 @@ def main() -> int:
         if args.action == "migrate":
             return django_command(project_path, ["migrate"])
         return django_command(project_path, ["runserver"])
+    if args.command == "convert":
+        return convert_command(
+            pdf_path=args.pdf_path,
+            output=args.output,
+            output_format=args.format,
+            method=args.method,
+            enhance=not args.no_enhance,
+        )
 
     parser.print_help()
     return 1

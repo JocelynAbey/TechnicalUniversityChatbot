@@ -219,7 +219,7 @@ def train_model(request):
                 return redirect('admin_dashboard')
             
             # Train the model
-            success = train_command() == 0
+            success = train_command(verbose=False) == 0
             
             if success:
                 # Reload chatbot with new model
@@ -241,6 +241,8 @@ def train_model(request):
                 messages.error(request, 'Model training failed')
                 
         except Exception as e:
+            with open(model_path().with_suffix('.train-error.log'), 'a', encoding='utf-8') as f:
+                f.write(f"{datetime.now().isoformat()} | {e}\n")
             messages.error(request, f'Error training model: {str(e)}')
         
         return redirect('admin_dashboard')
