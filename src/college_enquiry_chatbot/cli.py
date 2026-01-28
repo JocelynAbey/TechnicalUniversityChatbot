@@ -1,13 +1,13 @@
 import argparse
 from typing import Optional
 
-from .config import data_path, model_path
+from .config import data_path, dataset_path, model_path
 from .core.rag import CollegeEnquiryRAGChatbot
 
 
 def train_command() -> int:
     chatbot = CollegeEnquiryRAGChatbot(
-        data_path=data_path(),
+        data_path=dataset_path(),
         model_path=model_path(),
     )
     if not chatbot.load_data():
@@ -16,7 +16,7 @@ def train_command() -> int:
     if not chatbot.train_model():
         print("⚠️ Training failed")
         return 1
-    if not chatbot.save_model():
+    if not chatbot.save_model(data_output_path=data_path()):
         print("⚠️ Saving failed")
         return 1
     print("✅ Chatbot training completed and saved!")

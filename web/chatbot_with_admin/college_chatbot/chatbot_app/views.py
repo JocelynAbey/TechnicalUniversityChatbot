@@ -21,12 +21,11 @@ chatbot = None
 def get_chatbot():
     """Get or initialize chatbot instance"""
     global chatbot
-    if chatbot is None:
-        chatbot = CollegeEnquiryRAGChatbot(
-            data_path=data_path(),
-            model_path=model_path(),
-        )
-        chatbot.load_model()
+    chatbot = CollegeEnquiryRAGChatbot(
+        data_path=data_path(),
+        model_path=model_path(),
+    )
+    chatbot.load_model()
     return chatbot
 
 
@@ -58,6 +57,18 @@ def chat_api(request):
                 })
             
             response = bot.chat(user_question)
+
+            debug_matches = []
+            try:
+                for item in bot.retrieve_context(user_question, top_k=3):
+                    debug_matches.append(
+                        {
+                            "question": item.question,
+                            "similarity": round(item.similarity, 3),
+                        }
+                    )
+            except Exception:
+                pass
             
             return JsonResponse({
                 'success': True,
@@ -65,7 +76,8 @@ def chat_api(request):
                 'confidence': response['confidence'],
                 'category': response['category'],
                 'matched_question': response.get('matched_question'),
-                'related_questions': response.get('related_questions', [])
+                'related_questions': response.get('related_questions', []),
+                'debug_matches': debug_matches,
             })
             
         except Exception as e:

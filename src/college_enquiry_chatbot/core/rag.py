@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
+import re
 
 import json
 import numpy as np
@@ -70,12 +71,13 @@ class CollegeEnquiryRAGChatbot:
         self.model_trained = True
         return True
 
-    def save_model(self) -> bool:
+    def save_model(self, data_output_path: Path | None = None) -> bool:
         if not self.model_trained or self.embeddings is None:
             return False
         try:
             np.save(self.model_path, self.embeddings)
-            with self.data_path.open("w", encoding="utf-8") as f:
+            output_path = data_output_path or self.data_path
+            with output_path.open("w", encoding="utf-8") as f:
                 json.dump(self.qa_data, f, ensure_ascii=False, indent=2)
             return True
         except Exception:
@@ -111,6 +113,15 @@ class CollegeEnquiryRAGChatbot:
             }
         context_items = self.retrieve_context(user_question, top_k=3)
         if not context_items:
+            keyword_match = self._keyword_match(user_question)
+            if keyword_match:
+                return {
+                    "answer": keyword_match["answer"],
+                    "confidence": 0.7,
+                    "category": keyword_match.get("category", "general"),
+                    "matched_question": keyword_match["question"],
+                    "related_questions": [],
+                }
             return {
                 "answer": "I'm sorry, I couldn't find relevant information in our college database.",
                 "confidence": 0.0,
@@ -122,6 +133,15 @@ class CollegeEnquiryRAGChatbot:
         best_item = max(context_items, key=lambda x: x.similarity)
         sim = best_item.similarity
         if sim < threshold:
+            keyword_match = self._keyword_match(user_question)
+            if keyword_match:
+                return {
+                    "answer": keyword_match["answer"],
+                    "confidence": round(sim, 2),
+                    "category": keyword_match.get("category", "general"),
+                    "matched_question": keyword_match["question"],
+                    "related_questions": [],
+                }
             return {
                 "answer": "I'm sorry, I couldn't find relevant information in our college database.",
                 "confidence": round(sim, 2),
@@ -194,6 +214,48 @@ Answer:
             if token.isalpha() and token in answer_lower
         }
         return len(shared_tokens) >= 2
+
+    def _keyword_match(self, text: str) -> dict | None:
+        tokens = self._tokenize(text)
+        if not tokens:
+            return None
+        best = None
+        best_score = 0.0
+        for item in self.qa_data:
+            question = item.get("question", "")
+            q_tokens = self._tokenize(question)
+            if not q_tokens:
+                continue
+            overlap = len(tokens & q_tokens) / max(1, len(tokens))
+            if overlap > best_score:
+                best_score = overlap
+                best = item
+        if best and best_score >= 0.34:
+            return best
+        return None
+
+    @staticmethod
+    def _tokenize(text: str) -> set[str]:
+        stopwords = {
+            "the",
+            "is",
+            "are",
+            "a",
+            "an",
+            "of",
+            "in",
+            "for",
+            "to",
+            "what",
+            "which",
+            "does",
+            "do",
+            "at",
+            "and",
+        }
+        normalized = text.lower().replace("fullform", "full form")
+        tokens = set(re.findall(r"[a-z0-9]+", normalized))
+        return {token for token in tokens if token not in stopwords}
 
     @staticmethod
     def _strip_prompt(prompt: str, generated: str) -> str:
