@@ -103,7 +103,7 @@ class CollegeEnquiryRAGChatbot:
                 )
         return retrieved
 
-    def generate_answer(self, user_question: str, threshold: float = 0.6) -> dict:
+    def generate_answer(self, user_question: str, threshold: float = 0.75) -> dict:
         if self._is_greeting(user_question):
             return {
                 "answer": "Hello! How can I help you with college enquiries today?",
@@ -114,15 +114,6 @@ class CollegeEnquiryRAGChatbot:
             }
         context_items = self.retrieve_context(user_question, top_k=3)
         if not context_items:
-            keyword_match = self._keyword_match(user_question)
-            if keyword_match:
-                return {
-                    "answer": keyword_match["answer"],
-                    "confidence": 0.7,
-                    "category": keyword_match.get("category", "general"),
-                    "matched_question": keyword_match["question"],
-                    "related_questions": [],
-                }
             return {
                 "answer": "I'm sorry, I couldn't find relevant information in our college database.",
                 "confidence": 0.0,
@@ -134,15 +125,6 @@ class CollegeEnquiryRAGChatbot:
         best_item = max(context_items, key=lambda x: x.similarity)
         sim = best_item.similarity
         if sim < threshold:
-            keyword_match = self._keyword_match(user_question)
-            if keyword_match:
-                return {
-                    "answer": keyword_match["answer"],
-                    "confidence": round(sim, 2),
-                    "category": keyword_match.get("category", "general"),
-                    "matched_question": keyword_match["question"],
-                    "related_questions": [],
-                }
             return {
                 "answer": "I'm sorry, I couldn't find relevant information in our college database.",
                 "confidence": round(sim, 2),
